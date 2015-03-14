@@ -4,6 +4,8 @@ import "os"
 import "io"
 import "fmt"
 import "log"
+import "net"
+import "time"
 import "flag"
 import "bufio"
 import "strings"
@@ -14,6 +16,8 @@ import "golang.org/x/crypto/ssh"
 var flag_workers = flag.Int("workers", 3, "number of workers")
 var flag_identity = flag.String("identity", "", "path to sshkey")
 var flag_username = flag.String("username", "", "ssh username")
+
+var summary = make(map[string]int)
 
 func init() {
     // setup flags / usage
@@ -89,7 +93,10 @@ func main() {
     // print results
     for a := 0; a <= job_count-1; a++ {
         <-results
-    }    
+    }
+
+    fmt.Println("summary:")
+    fmt.Println(summary)
 }
 
 func ssh_worker(id int, jobs <- chan string, results chan<- string) {
@@ -108,9 +115,29 @@ func ssh_connect(ip string, port string, username string, cmd_line string) (stri
             ssh.PublicKeys(pkey),
         },
     }
+
+    // google doesn't have a timeout for ssh, so let's test we can connect first
+    _, err := net.DialTimeout("tcp", ip+":"+port, time.Second*3)
+    if err !=nil {
+        if _, wasset := summary["connection_timeout"]; wasset{
+            summary["connection_timeout"] += 1
+        } else {
+            summary["connection_timeout"] = 1
+        }
+        fmt.Printf("%15s:*%s\n", ip, err)
+        return ""
+    }
+
     client, err := ssh.Dial("tcp", ip+":"+port, config)
     if err != nil {
-        panic("Failed to dial: " + err.Error())
+        // this is likely an auth error, but file it under connection_failure
+        if _, wasset := summary["connection_failure"]; wasset{
+            summary["connection_failure"] += 1
+        } else {
+            summary["connection_failure"] = 1
+        }
+        fmt.Printf("%15s:*%s\n", ip, err)
+        return ""
     }
 
     // Each ClientConn can support multiple interactive sessions,
