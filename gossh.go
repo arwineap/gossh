@@ -1,10 +1,11 @@
 package main
 
 import "os"
+import "io"
 import "fmt"
 import "log"
 import "flag"
-import "bytes"
+import "bufio"
 import "strings"
 import "os/user"
 import "io/ioutil"
@@ -87,7 +88,7 @@ func main() {
 
     // print results
     for a := 0; a <= job_count-1; a++ {
-       <-results
+        <-results
     }    
 }
 
@@ -120,18 +121,33 @@ func ssh_connect(ip string, port string, username string, cmd_line string) (stri
     }
     defer session.Close()
 
-    // Once a Session is created, you can execute a single command on
-    // the remote side using the Run method.
-    var b bytes.Buffer
-    session.Stdout = &b
-    if err := session.Run(cmd_line); err != nil {
-        //panic("Failed to run: " + err.Error())
-        fmt.Println("failed to session.run:" + err.Error())
-        fmt.Println("returned:" + b.String())
-        return ""
+    // setup stdout / setd err io.Reader objects
+    so, err := session.StdoutPipe()
+    if err != nil {
+        panic(err)
     }
-    fmt.Println(b.String())
-    return b.String()
+    se, err := session.StderrPipe()
+    if err != nil {
+        panic(err)
+    }
+
+    session.Start(cmd_line)
+
+    // combine the io.Reader objects into one
+    multireader := io.MultiReader(so, se)
+
+    // Setup a scanner on the ioReader object
+    scanner := bufio.NewScanner(multireader)
+    for scanner.Scan() {
+        fmt.Println(ip + ": " + scanner.Text())
+        if err := scanner.Err(); err != nil {
+            fmt.Fprintln(os.Stderr, "error:", err)
+            os.Exit(1)
+        }
+    }
+    session.Wait()
+
+    return ""
 }
 
 func parsekey(file string) ssh.Signer {
