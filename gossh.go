@@ -23,11 +23,11 @@ func init() {
     }
     flag.Usage = func() {
         fmt.Println("\nUsage:")
-        fmt.Println("cat hostlist | gossh [-w|--workers] [-u|--username] [-i|--identity] 'cmd to run'")
+        fmt.Println("cat iplist | gossh [-w|--workers] [-u|--username] [-i|--identity] 'cmd to run'")
         fmt.Println("  --workers -w -- Number of workers to spawn (default: 3)")
         fmt.Println("  --username -u -- Username to use for ssh connections (default: " + usr.Username + ")")
         fmt.Println("  --identity -i -- ssh private key to use (default: " + usr.HomeDir + "/.ssh/id_rsa)")
-        fmt.Println("\nhostlist must be \\n delimited list\n")
+        fmt.Println("\niplist must be \\n delimited list\n")
     }
     flag.IntVar(flag_workers, "w", 3, "number of workers")
     flag.StringVar(flag_identity, "i", "", "path to sshkey")
@@ -94,7 +94,7 @@ func main() {
 
 func ssh_worker(id int, jobs <- chan string, results chan<- string) {
     for j := range jobs {
-        fmt.Println("ssh_worker", id, "processing host", j)
+        //fmt.Println("ssh_worker", id, "processing host", j)
         results <- ssh_connect(j, "22", *flag_username, strings.Join(flag.Args(), " "))
     }
 }
@@ -139,7 +139,7 @@ func ssh_connect(ip string, port string, username string, cmd_line string) (stri
     // Setup a scanner on the ioReader object
     scanner := bufio.NewScanner(multireader)
     for scanner.Scan() {
-        fmt.Println(ip + ": " + scanner.Text())
+        fmt.Printf("%15s: %s\n", ip, scanner.Text())
         if err := scanner.Err(); err != nil {
             fmt.Fprintln(os.Stderr, "error:", err)
             os.Exit(1)
