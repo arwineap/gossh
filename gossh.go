@@ -27,8 +27,8 @@ func init() {
     }
     flag.Usage = func() {
         fmt.Println("\nUsage:")
-        fmt.Println("cat iplist | gossh [-w|--workers] [-u|--username] [-i|--identity] 'cmd to run'")
-        fmt.Println("  --workers -w -- Number of workers to spawn (default: 3)")
+        fmt.Println("cat iplist | " + os.Args[0] + " [-w|--workers] [-u|--username] [-i|--identity] 'cmd to run'")
+        fmt.Println("  --workers  -w -- Number of workers to spawn (default: 3)")
         fmt.Println("  --username -u -- Username to use for ssh connections (default: " + usr.Username + ")")
         fmt.Println("  --identity -i -- ssh private key to use (default: " + usr.HomeDir + "/.ssh/id_rsa)")
         fmt.Println("\niplist must be \\n delimited list\n")
