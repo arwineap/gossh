@@ -4,8 +4,7 @@ parallel ssh command execution in go
 
 ##### usage
 ```
-Usage:
-cat iplist | ./gossh [-w|--workers] [-u|--username] [-i|--identity] 'cmd to run'
+$ cat iplist | ./gossh [-w|--workers] [-u|--username] [-i|--identity] 'cmd to run'
   --workers  -w -- Number of workers to spawn (default: 3)
   --username -u -- Username to use for ssh connections (default: alex)
   --identity -i -- ssh private key to use (default: /home/alex/.ssh/id_rsa)
